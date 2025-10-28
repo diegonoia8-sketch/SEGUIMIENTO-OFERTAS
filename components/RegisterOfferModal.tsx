@@ -1,16 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Offer, Status } from '../types';
 import Modal from './Modal';
 
 interface RegisterOfferModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (offer: Omit<Offer, 'id' | 'ultAct'>) => void;
+  onSubmit: (offer: Omit<Offer, 'ultAct'>) => void;
   statuses: Status[];
 }
 
 const RegisterOfferModal: React.FC<RegisterOfferModalProps> = ({ isOpen, onClose, onSubmit, statuses }) => {
-  const [formData, setFormData] = useState({
+  const getInitialState = () => ({
+    id: '',
     estado: statuses.length > 0 ? statuses[0].name : '',
     cliente: '',
     destino: '',
@@ -23,6 +24,15 @@ const RegisterOfferModal: React.FC<RegisterOfferModalProps> = ({ isOpen, onClose
     duracion: '',
   });
 
+  const [formData, setFormData] = useState(getInitialState());
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormData(getInitialState());
+    }
+  }, [isOpen, statuses]);
+
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -30,13 +40,21 @@ const RegisterOfferModal: React.FC<RegisterOfferModalProps> = ({ isOpen, onClose
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.cliente || !formData.proyecto || !formData.fechaRfq || !formData.responsable || !formData.sop || !formData.estado) {
+    if (!formData.id || !formData.cliente || !formData.proyecto || !formData.fechaRfq || !formData.responsable || !formData.sop || !formData.estado) {
         alert("Por favor, rellene todos los campos obligatorios.");
         return;
     }
     
     onSubmit({
-      ...formData,
+      id: formData.id,
+      estado: formData.estado,
+      cliente: formData.cliente,
+      destino: formData.destino,
+      proyecto: formData.proyecto,
+      fechaRfq: formData.fechaRfq,
+      responsable: formData.responsable,
+      sop: formData.sop,
+      duracion: formData.duracion,
       volPico: formData.volPico ? Number(formData.volPico) : undefined,
       volTot: formData.volTot ? Number(formData.volTot) : undefined,
     });
@@ -65,6 +83,7 @@ const RegisterOfferModal: React.FC<RegisterOfferModalProps> = ({ isOpen, onClose
     <Modal isOpen={isOpen} onClose={onClose} title="Registrar Nueva Oferta">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <InputField label="Nº Oferta" name="id" required value={formData.id} onChange={handleChange} />
             <InputField label="Cliente" name="cliente" required value={formData.cliente} onChange={handleChange} />
             <InputField label="Destino" name="destino" value={formData.destino} onChange={handleChange} />
             <InputField label="Proyecto" name="proyecto" required value={formData.proyecto} onChange={handleChange} />

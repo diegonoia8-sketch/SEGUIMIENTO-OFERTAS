@@ -11,7 +11,7 @@ import EditFollowUpModal from './components/EditFollowUpModal';
 import ConfigurationView from './components/ConfigurationView';
 import AlertDialog from './components/AlertDialog';
 import { db } from './firebase';
-import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, query, orderBy, getDoc, setDoc } from 'firebase/firestore';
 
 interface DialogState {
     isOpen: boolean;
@@ -71,12 +71,26 @@ const App: React.FC = () => {
   }, []);
 
 
-  const handleRegisterOffer = async (newOfferData: Omit<Offer, 'id' | 'ultAct'>) => {
+  const handleRegisterOffer = async (newOfferData: Omit<Offer, 'ultAct'>) => {
+    const offerRef = doc(db, 'offers', newOfferData.id);
+    const docSnap = await getDoc(offerRef);
+
+    if (docSnap.exists()) {
+      setDialog({
+        isOpen: true,
+        title: 'Error al Registrar',
+        message: `El número de oferta "${newOfferData.id}" ya existe. Por favor, introduzca un número diferente.`,
+        isConfirmation: false,
+        onConfirm: null,
+      });
+      return;
+    }
+      
     const offerWithDate = {
         ...newOfferData,
         ultAct: newOfferData.fechaRfq,
     };
-    await addDoc(collection(db, 'offers'), offerWithDate);
+    await setDoc(offerRef, offerWithDate);
   };
 
   const handleUpdateOffer = async (newFollowUpData: Omit<FollowUp, 'id'>) => {

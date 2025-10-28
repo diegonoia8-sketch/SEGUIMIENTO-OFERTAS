@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { Offer, FollowUp } from '../types';
 import EditIcon from './icons/EditIcon';
 import TrashIcon from './icons/TrashIcon';
+import OfferSearchInput from './OfferSearchInput';
 
 interface HistoryViewProps {
   offers: Offer[];
@@ -21,43 +22,29 @@ const formatDate = (dateString: string) => {
 };
 
 const HistoryView: React.FC<HistoryViewProps> = ({ offers, followUps, onEditFollowUp, onDeleteFollowUp }) => {
-  const [selectedOfferId, setSelectedOfferId] = useState<string>('');
+  const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
 
   const filteredHistory = useMemo(() => {
-    if (!selectedOfferId) return [];
+    if (!selectedOffer) return [];
     return followUps
-      .filter((f) => f.offerId === selectedOfferId)
+      .filter((f) => f.offerId === selectedOffer.id)
       .sort((a, b) => new Date(b.fechaAct).getTime() - new Date(a.fechaAct).getTime());
-  }, [selectedOfferId, followUps]);
-
-  const selectedOffer = useMemo(() => {
-    if (!selectedOfferId) return null;
-    return offers.find((o) => o.id === selectedOfferId);
-  }, [selectedOfferId, offers]);
+  }, [selectedOffer, followUps]);
   
   return (
     <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
         <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">Histórico de Seguimiento</h2>
         <div className="mb-4">
-            <label htmlFor="offer-search" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                Seleccione Nº Oferta para ver su histórico:
-            </label>
-            <select
-                id="offer-search"
-                value={selectedOfferId}
-                onChange={(e) => setSelectedOfferId(e.target.value)}
-                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full md:w-1/2 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
-            >
-                <option value="">-- Seleccionar Oferta --</option>
-                {offers.map(offer => (
-                    <option key={offer.id} value={offer.id}>
-                        {offer.id} - {offer.proyecto}
-                    </option>
-                ))}
-            </select>
+            <OfferSearchInput 
+                offers={offers}
+                selectedOffer={selectedOffer}
+                onOfferSelect={setSelectedOffer}
+                label="Seleccione Nº Oferta para ver su histórico:"
+                placeholder="Escriba Nº Oferta o Proyecto..."
+            />
         </div>
 
-        {selectedOfferId && (
+        {selectedOffer && (
              <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                      <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
