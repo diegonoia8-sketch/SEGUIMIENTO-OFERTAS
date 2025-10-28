@@ -1,0 +1,5 @@
+{
+  "name": "SEGUIMIENTO OFERTAS",
+  "description": "Una aplicación para registrar, actualizar y visualizar ofertas a clientes, incluyendo un historial de seguimiento y análisis de datos a través de gráficos.",
+  "requestFramePermissions": []
+}

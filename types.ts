@@ -1,0 +1,27 @@
+export interface Offer {
+  id: number; // Nº Oferta
+  estado: string; // Corresponds to Status['name']
+  cliente: string;
+  destino: string;
+  proyecto: string;
+  fechaRfq: string; // ISO date string
+  responsable: string;
+  ultAct: string; // ISO date string
+  volPico?: number;
+  volTot?: number;
+  sop: string; // "AAAA"
+  duracion: string;
+}
+
+export interface FollowUp {
+  id: number;
+  offerId: number;
+  fechaAct: string; // ISO date string
+  comentario: string;
+}
+
+export interface Status {
+  id: string;
+  name: string;
+  color: string; // hex color code
+}

@@ -1,0 +1,39 @@
+
+import React from 'react';
+import PlusIcon from './icons/PlusIcon';
+import EditIcon from './icons/EditIcon';
+
+interface HeaderProps {
+  onRegisterClick: () => void;
+  onUpdateClick: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ onRegisterClick, onUpdateClick }) => {
+  return (
+    <header className="bg-white dark:bg-gray-800 shadow-md p-4 mb-8">
+      <div className="container mx-auto flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+          Gestor de Ofertas
+        </h1>
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={onRegisterClick}
+            className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+          >
+            <PlusIcon className="w-5 h-5 mr-2" />
+            Registrar Oferta
+          </button>
+          <button
+            onClick={onUpdateClick}
+            className="flex items-center bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
+          >
+            <EditIcon className="w-5 h-5 mr-2" />
+            Act. Oferta
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+};
+
+export default Header;
