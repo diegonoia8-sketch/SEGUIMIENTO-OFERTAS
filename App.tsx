@@ -10,10 +10,8 @@ import CogIcon from './components/icons/CogIcon';
 import EditFollowUpModal from './components/EditFollowUpModal';
 import ConfigurationView from './components/ConfigurationView';
 import AlertDialog from './components/AlertDialog';
-import Login from './components/Login';
-import { db, auth } from './firebase';
+import { db } from './firebase';
 import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
-import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User } from 'firebase/auth';
 
 interface DialogState {
     isOpen: boolean;
@@ -24,9 +22,6 @@ interface DialogState {
 }
 
 const App: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isAuthLoading, setIsAuthLoading] = useState(true);
-
   const [offers, setOffers] = useState<Offer[]>([]);
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [statuses, setStatuses] = useState<Status[]>([]);
@@ -44,22 +39,6 @@ const App: React.FC = () => {
   });
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setIsAuthLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (!user) {
-      setOffers([]);
-      setFollowUps([]);
-      setStatuses([]);
-      setIsDataLoading(false);
-      return;
-    }
-
     setIsDataLoading(true);
     
     const offersQuery = query(collection(db, 'offers'), orderBy('proyecto'));
@@ -67,6 +46,9 @@ const App: React.FC = () => {
         const offersData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Offer));
         setOffers(offersData);
         setIsDataLoading(false); 
+    }, (error) => {
+        console.error("Error fetching offers: ", error);
+        setIsDataLoading(false);
     });
 
     const followUpsQuery = query(collection(db, 'followUps'), orderBy('fechaAct', 'desc'));
@@ -86,25 +68,7 @@ const App: React.FC = () => {
         unsubFollowUps();
         unsubStatuses();
     };
-  }, [user]);
-
-  const handleLogin = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error("Authentication Error: ", error);
-      alert("No se pudo iniciar sesión. Por favor, intente de nuevo.");
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-    } catch (error) {
-      console.error("Logout Error: ", error);
-    }
-  };
+  }, []);
 
 
   const handleRegisterOffer = async (newOfferData: Omit<Offer, 'id' | 'ultAct'>) => {
@@ -181,18 +145,6 @@ const App: React.FC = () => {
     });
   }
   
-  if (isAuthLoading) {
-    return (
-        <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900">
-            <p className="text-xl text-gray-800 dark:text-white">Verificando autenticación...</p>
-        </div>
-    );
-  }
-
-  if (!user) {
-      return <Login onLogin={handleLogin} />;
-  }
-
   if (isDataLoading) {
       return (
           <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900">
@@ -204,10 +156,8 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
       <Header 
-        user={user}
         onRegisterClick={() => setIsRegisterModalOpen(true)}
         onUpdateClick={() => setIsUpdateModalOpen(true)}
-        onLogout={handleLogout}
       />
       <main className="container mx-auto p-4 space-y-8">
         <div className="mb-8 border-b border-gray-200 dark:border-gray-700">
