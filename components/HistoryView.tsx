@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Offer, FollowUp } from '../types';
 import EditIcon from './icons/EditIcon';
@@ -7,7 +8,7 @@ interface HistoryViewProps {
   offers: Offer[];
   followUps: FollowUp[];
   onEditFollowUp: (followUp: FollowUp) => void;
-  onDeleteFollowUp: (followUpId: number) => void;
+  onDeleteFollowUp: (followUpId: string) => void;
 }
 
 const formatDate = (dateString: string) => {
@@ -25,13 +26,13 @@ const HistoryView: React.FC<HistoryViewProps> = ({ offers, followUps, onEditFoll
   const filteredHistory = useMemo(() => {
     if (!selectedOfferId) return [];
     return followUps
-      .filter((f) => f.offerId === Number(selectedOfferId))
+      .filter((f) => f.offerId === selectedOfferId)
       .sort((a, b) => new Date(b.fechaAct).getTime() - new Date(a.fechaAct).getTime());
   }, [selectedOfferId, followUps]);
 
   const selectedOffer = useMemo(() => {
     if (!selectedOfferId) return null;
-    return offers.find((o) => o.id === Number(selectedOfferId));
+    return offers.find((o) => o.id === selectedOfferId);
   }, [selectedOfferId, offers]);
   
   return (

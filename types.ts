@@ -1,5 +1,6 @@
+
 export interface Offer {
-  id: number; // Nº Oferta
+  id: string; // Document ID from Firestore
   estado: string; // Corresponds to Status['name']
   cliente: string;
   destino: string;
@@ -14,14 +15,14 @@ export interface Offer {
 }
 
 export interface FollowUp {
-  id: number;
-  offerId: number;
+  id: string; // Document ID from Firestore
+  offerId: string; // References Offer Document ID
   fechaAct: string; // ISO date string
   comentario: string;
 }
 
 export interface Status {
-  id: string;
+  id: string; // Document ID from Firestore
   name: string;
   color: string; // hex color code
 }

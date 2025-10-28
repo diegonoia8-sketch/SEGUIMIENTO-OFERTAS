@@ -6,7 +6,7 @@ interface OfferTableProps {
   offers: Offer[];
   followUps: FollowUp[];
   statuses: Status[];
-  onUpdateOfferStatus: (offerId: number, newStatus: string) => void;
+  onUpdateOfferStatus: (offerId: string, newStatus: string) => void;
 }
 
 const formatDate = (dateString: string) => {
@@ -38,7 +38,7 @@ const OfferTable: React.FC<OfferTableProps> = ({ offers, followUps, statuses, on
     setFilters({});
   }
 
-  const getLatestFollowUp = (offerId: number) => {
+  const getLatestFollowUp = (offerId: string) => {
     const offerFollowUps = followUps
       .filter((f) => f.offerId === offerId)
       .sort((a, b) => new Date(b.fechaAct).getTime() - new Date(a.fechaAct).getTime());

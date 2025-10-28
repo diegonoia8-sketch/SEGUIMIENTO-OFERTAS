@@ -22,7 +22,7 @@ const UpdateOfferModal: React.FC<UpdateOfferModalProps> = ({ isOpen, onClose, on
     }
 
     onSubmit({
-      offerId: Number(offerId),
+      offerId: offerId,
       fechaAct: new Date().toISOString().split('T')[0],
       comentario,
     });

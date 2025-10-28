@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Offer, FollowUp, Status } from './types';
 import Header from './components/Header';
 import OfferTable from './components/OfferTable';
@@ -10,28 +10,10 @@ import CogIcon from './components/icons/CogIcon';
 import EditFollowUpModal from './components/EditFollowUpModal';
 import ConfigurationView from './components/ConfigurationView';
 import AlertDialog from './components/AlertDialog';
-
-// Initial mock data
-const initialOffers: Offer[] = [
-  { id: 1001, estado: 'Adjudicada', cliente: 'Cliente A', destino: 'Planta X', proyecto: 'Proyecto Alpha', fechaRfq: '2023-05-15', responsable: 'Juan Pérez', ultAct: '2023-06-01', volPico: 50000, volTot: 250000, sop: '2025', duracion: '5 años' },
-  { id: 1002, estado: 'Pendiente', cliente: 'Cliente B', destino: 'Planta Y', proyecto: 'Proyecto Beta', fechaRfq: '2024-03-20', responsable: 'Ana Gómez', ultAct: '2024-04-10', volPico: 120000, volTot: 600000, sop: '2026', duracion: '5 años' },
-  { id: 1003, estado: 'Perdida', cliente: 'Cliente C', destino: 'Planta Z', proyecto: 'Proyecto Gamma', fechaRfq: '2022-11-10', responsable: 'Juan Pérez', ultAct: '2022-12-05', volPico: 80000, volTot: 400000, sop: '2024', duracion: '5 años' },
-];
-
-const initialFollowUps: FollowUp[] = [
-  { id: 1, offerId: 1001, fechaAct: '2023-05-20', comentario: 'Enviada cotización inicial.' },
-  { id: 2, offerId: 1001, fechaAct: '2023-06-01', comentario: 'Cliente confirma adjudicación. Preparar contrato.' },
-  { id: 3, offerId: 1002, fechaAct: '2024-03-25', comentario: 'Primera reunión técnica. Pendiente de feedback.' },
-  { id: 4, offerId: 1002, fechaAct: '2024-04-10', comentario: 'Cliente solicita ajuste en precios. Se está revisando.' },
-  { id: 5, offerId: 1003, fechaAct: '2022-12-05', comentario: 'Competencia ofreció un precio más bajo.' },
-];
-
-const initialStatuses: Status[] = [
-    { id: '1', name: 'Pendiente', color: '#facc15' },
-    { id: '2', name: 'Adjudicada', color: '#4ade80' },
-    { id: '3', name: 'Perdida', color: '#f87171' },
-    { id: '4', name: 'Cancelada', color: '#9ca3af' },
-];
+import Login from './components/Login';
+import { db, auth } from './firebase';
+import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
+import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User } from 'firebase/auth';
 
 interface DialogState {
     isOpen: boolean;
@@ -42,9 +24,13 @@ interface DialogState {
 }
 
 const App: React.FC = () => {
-  const [offers, setOffers] = useState<Offer[]>(initialOffers);
-  const [followUps, setFollowUps] = useState<FollowUp[]>(initialFollowUps);
-  const [statuses, setStatuses] = useState<Status[]>(initialStatuses);
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+
+  const [offers, setOffers] = useState<Offer[]>([]);
+  const [followUps, setFollowUps] = useState<FollowUp[]>([]);
+  const [statuses, setStatuses] = useState<Status[]>([]);
+  const [isDataLoading, setIsDataLoading] = useState(true);
   
   const [activeTab, setActiveTab] = useState<'offers' | 'config'>('offers');
 
@@ -57,47 +43,97 @@ const App: React.FC = () => {
       isOpen: false, title: '', message: '', isConfirmation: false, onConfirm: null 
   });
 
-  const handleRegisterOffer = (newOfferData: Omit<Offer, 'id' | 'ultAct'>) => {
-    setOffers(prevOffers => {
-        const newId = prevOffers.length > 0 ? Math.max(...prevOffers.map(o => o.id)) + 1 : 1001;
-        const newOffer: Offer = {
-            ...newOfferData,
-            id: newId,
-            ultAct: newOfferData.fechaRfq,
-        };
-        return [...prevOffers, newOffer];
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setIsAuthLoading(false);
     });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setOffers([]);
+      setFollowUps([]);
+      setStatuses([]);
+      setIsDataLoading(false);
+      return;
+    }
+
+    setIsDataLoading(true);
+    
+    const offersQuery = query(collection(db, 'offers'), orderBy('proyecto'));
+    const unsubOffers = onSnapshot(offersQuery, (snapshot) => {
+        const offersData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Offer));
+        setOffers(offersData);
+        setIsDataLoading(false); 
+    });
+
+    const followUpsQuery = query(collection(db, 'followUps'), orderBy('fechaAct', 'desc'));
+    const unsubFollowUps = onSnapshot(followUpsQuery, (snapshot) => {
+        const followUpsData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as FollowUp));
+        setFollowUps(followUpsData);
+    });
+
+    const statusesQuery = query(collection(db, 'statuses'), orderBy('name'));
+    const unsubStatuses = onSnapshot(statusesQuery, (snapshot) => {
+        const statusesData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Status));
+        setStatuses(statusesData);
+    });
+
+    return () => {
+        unsubOffers();
+        unsubFollowUps();
+        unsubStatuses();
+    };
+  }, [user]);
+
+  const handleLogin = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      console.error("Authentication Error: ", error);
+      alert("No se pudo iniciar sesión. Por favor, intente de nuevo.");
+    }
   };
 
-  const handleUpdateOffer = (newFollowUpData: Omit<FollowUp, 'id'>) => {
-    setFollowUps(prevFollowUps => {
-        const newId = prevFollowUps.length > 0 ? Math.max(...prevFollowUps.map(f => f.id)) + 1 : 1;
-        const newFollowUp: FollowUp = {
-            ...newFollowUpData,
-            id: newId,
-        };
-        return [...prevFollowUps, newFollowUp];
-    });
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Logout Error: ", error);
+    }
+  };
 
-    setOffers(prevOffers => prevOffers.map(offer => 
-        offer.id === newFollowUpData.offerId 
-            ? { ...offer, ultAct: newFollowUpData.fechaAct } 
-            : offer
-    ));
+
+  const handleRegisterOffer = async (newOfferData: Omit<Offer, 'id' | 'ultAct'>) => {
+    const offerWithDate = {
+        ...newOfferData,
+        ultAct: newOfferData.fechaRfq,
+    };
+    await addDoc(collection(db, 'offers'), offerWithDate);
+  };
+
+  const handleUpdateOffer = async (newFollowUpData: Omit<FollowUp, 'id'>) => {
+    await addDoc(collection(db, 'followUps'), newFollowUpData);
+    const offerRef = doc(db, 'offers', newFollowUpData.offerId);
+    await updateDoc(offerRef, { ultAct: newFollowUpData.fechaAct });
   };
   
-  const handleEditFollowUp = (updatedFollowUp: FollowUp) => {
-      setFollowUps(prev => prev.map(f => f.id === updatedFollowUp.id ? updatedFollowUp : f));
+  const handleEditFollowUp = async (updatedFollowUp: FollowUp) => {
+      const followUpRef = doc(db, 'followUps', updatedFollowUp.id);
+      await updateDoc(followUpRef, { comentario: updatedFollowUp.comentario });
   };
   
-  const handleDeleteFollowUp = (followUpId: number) => {
+  const handleDeleteFollowUp = (followUpId: string) => {
       setDialog({
           isOpen: true,
           title: 'Confirmar Eliminación',
           message: '¿Estás seguro de que quieres eliminar este comentario de seguimiento? Esta acción no se puede deshacer.',
           isConfirmation: true,
-          onConfirm: () => {
-              setFollowUps(prev => prev.filter(f => f.id !== followUpId));
+          onConfirm: async () => {
+              await deleteDoc(doc(db, 'followUps', followUpId));
               setDialog({ isOpen: false, title: '', message: '', isConfirmation: false, onConfirm: null });
           }
       });
@@ -108,13 +144,13 @@ const App: React.FC = () => {
       setIsEditFollowUpModalOpen(true);
   };
   
-  const handleUpdateOfferStatus = (offerId: number, newStatus: string) => {
-      setOffers(prev => prev.map(o => o.id === offerId ? { ...o, estado: newStatus } : o));
+  const handleUpdateOfferStatus = async (offerId: string, newStatus: string) => {
+      const offerRef = doc(db, 'offers', offerId);
+      await updateDoc(offerRef, { estado: newStatus });
   };
   
-  const handleAddStatus = (newStatusData: Omit<Status, 'id'>) => {
-      const newStatus: Status = { ...newStatusData, id: crypto.randomUUID() };
-      setStatuses(prev => [...prev, newStatus]);
+  const handleAddStatus = async (newStatusData: Omit<Status, 'id'>) => {
+      await addDoc(collection(db, 'statuses'), newStatusData);
   };
   
   const handleDeleteStatus = (statusId: string) => {
@@ -138,18 +174,40 @@ const App: React.FC = () => {
         title: 'Confirmar Eliminación',
         message: `¿Estás seguro de que quieres eliminar el estado "${statusToDelete.name}"?`,
         isConfirmation: true,
-        onConfirm: () => {
-            setStatuses(prev => prev.filter(s => s.id !== statusId));
+        onConfirm: async () => {
+            await deleteDoc(doc(db, 'statuses', statusId));
             setDialog({ isOpen: false, title: '', message: '', isConfirmation: false, onConfirm: null });
         }
     });
   }
   
+  if (isAuthLoading) {
+    return (
+        <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900">
+            <p className="text-xl text-gray-800 dark:text-white">Verificando autenticación...</p>
+        </div>
+    );
+  }
+
+  if (!user) {
+      return <Login onLogin={handleLogin} />;
+  }
+
+  if (isDataLoading) {
+      return (
+          <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900">
+              <p className="text-xl text-gray-800 dark:text-white">Cargando datos...</p>
+          </div>
+      );
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
       <Header 
+        user={user}
         onRegisterClick={() => setIsRegisterModalOpen(true)}
         onUpdateClick={() => setIsUpdateModalOpen(true)}
+        onLogout={handleLogout}
       />
       <main className="container mx-auto p-4 space-y-8">
         <div className="mb-8 border-b border-gray-200 dark:border-gray-700">
