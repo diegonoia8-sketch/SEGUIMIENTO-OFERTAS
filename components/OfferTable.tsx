@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { Offer, FollowUp, Status } from '../types';
-import FilterClearIcon from './icons/FilterClearIcon';
-import EditIcon from './icons/EditIcon';
-import TrashIcon from './icons/TrashIcon';
+import { Offer, FollowUp, Status } from '../types.ts';
+import FilterClearIcon from './icons/FilterClearIcon.tsx';
+import EditIcon from './icons/EditIcon.tsx';
+import TrashIcon from './icons/TrashIcon.tsx';
 
 interface OfferTableProps {
   offers: Offer[];
@@ -57,8 +57,8 @@ const OfferTable: React.FC<OfferTableProps> = ({ offers, followUps, statuses, on
         responsable: new Set(),
     };
     offers.forEach(offer => {
-        unique.cliente.add(offer.cliente);
-        unique.responsable.add(offer.responsable);
+        if(offer.cliente) unique.cliente.add(offer.cliente);
+        if(offer.responsable) unique.responsable.add(offer.responsable);
     });
     return {
         cliente: Array.from(unique.cliente).sort(),

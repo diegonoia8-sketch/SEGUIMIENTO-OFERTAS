@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Status } from '../types';
-import TrashIcon from './icons/TrashIcon';
+import { Status } from '../types.ts';
+import TrashIcon from './icons/TrashIcon.tsx';
 
 interface ConfigurationViewProps {
   statuses: Status[];

@@ -1,5 +1,5 @@
 import React from 'react';
-import GoogleIcon from './icons/GoogleIcon';
+import GoogleIcon from './icons/GoogleIcon.tsx';
 
 interface LoginProps {
   onLogin: () => void;

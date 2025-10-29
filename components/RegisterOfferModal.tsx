@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Offer, Status } from '../types';
-import Modal from './Modal';
+import { Offer, Status } from '../types.ts';
+import Modal from './Modal.tsx';
 
 interface RegisterOfferModalProps {
   isOpen: boolean;

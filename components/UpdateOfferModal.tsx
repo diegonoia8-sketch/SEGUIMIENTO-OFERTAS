@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { Offer, FollowUp } from '../types';
-import Modal from './Modal';
-import OfferSearchInput from './OfferSearchInput';
+import { Offer, FollowUp } from '../types.ts';
+import Modal from './Modal.tsx';
+import OfferSearchInput from './OfferSearchInput.tsx';
 
 interface UpdateOfferModalProps {
   isOpen: boolean;

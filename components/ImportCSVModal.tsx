@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { Offer } from '../types';
-import Modal from './Modal';
-import UploadIcon from './icons/UploadIcon';
+import { Offer } from '../types.ts';
+import Modal from './Modal.tsx';
+import UploadIcon from './icons/UploadIcon.tsx';
 
 interface ImportCSVModalProps {
   isOpen: boolean;
