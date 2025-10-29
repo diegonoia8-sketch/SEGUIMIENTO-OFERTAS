@@ -1,7 +1,7 @@
 import React from 'react';
-import PlusIcon from './icons/PlusIcon.js';
-import EditIcon from './icons/EditIcon.js';
-import UploadIcon from './icons/UploadIcon.js';
+import PlusIcon from './icons/PlusIcon.tsx';
+import EditIcon from './icons/EditIcon.tsx';
+import UploadIcon from './icons/UploadIcon.tsx';
 
 interface HeaderProps {
   onRegisterClick: () => void;

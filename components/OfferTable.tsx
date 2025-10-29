@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { Offer, FollowUp, Status } from '../types.js';
-import FilterClearIcon from './icons/FilterClearIcon.js';
-import EditIcon from './icons/EditIcon.js';
-import TrashIcon from './icons/TrashIcon.js';
+import { Offer, FollowUp, Status } from '../types.ts';
+import FilterClearIcon from './icons/FilterClearIcon.tsx';
+import EditIcon from './icons/EditIcon.tsx';
+import TrashIcon from './icons/TrashIcon.tsx';
 
 interface OfferTableProps {
   offers: Offer[];

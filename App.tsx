@@ -1,19 +1,19 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Offer, FollowUp, Status } from './types.js';
-import Header from './components/Header.js';
-import OfferTable from './components/OfferTable.js';
-import RegisterOfferModal from './components/RegisterOfferModal.js';
-import UpdateOfferModal from './components/UpdateOfferModal.js';
-import HistoryView from './components/HistoryView.js';
-import OfferChart from './components/OfferChart.js';
-import CogIcon from './components/icons/CogIcon.js';
-import EditFollowUpModal from './components/EditFollowUpModal.js';
-import ConfigurationView from './components/ConfigurationView.js';
-import AlertDialog from './components/AlertDialog.js';
-import { db } from './firebase.js';
+import { Offer, FollowUp, Status } from './types.ts';
+import Header from './components/Header.tsx';
+import OfferTable from './components/OfferTable.tsx';
+import RegisterOfferModal from './components/RegisterOfferModal.tsx';
+import UpdateOfferModal from './components/UpdateOfferModal.tsx';
+import HistoryView from './components/HistoryView.tsx';
+import OfferChart from './components/OfferChart.tsx';
+import CogIcon from './components/icons/CogIcon.tsx';
+import EditFollowUpModal from './components/EditFollowUpModal.tsx';
+import ConfigurationView from './components/ConfigurationView.tsx';
+import AlertDialog from './components/AlertDialog.tsx';
+import { db } from './firebase.ts';
 import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, query, orderBy, getDoc, setDoc, where, getDocs, writeBatch } from 'firebase/firestore';
-import EditOfferModal from './components/EditOfferModal.js';
-import ImportCSVModal from './components/ImportCSVModal.js';
+import EditOfferModal from './components/EditOfferModal.tsx';
+import ImportCSVModal from './components/ImportCSVModal.tsx';
 
 interface DialogState {
     isOpen: boolean;

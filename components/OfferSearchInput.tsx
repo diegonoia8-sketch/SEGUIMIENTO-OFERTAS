@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Offer } from '../types.js';
-import SearchIcon from './icons/SearchIcon.js';
+import { Offer } from '../types.ts';
+import SearchIcon from './icons/SearchIcon.tsx';
 
 interface OfferSearchInputProps {
   offers: Offer[];

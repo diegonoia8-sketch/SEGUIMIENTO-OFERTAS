@@ -1,5 +1,5 @@
 import React from 'react';
-import Modal from './Modal.js';
+import Modal from './Modal.tsx';
 
 interface AlertDialogProps {
   isOpen: boolean;

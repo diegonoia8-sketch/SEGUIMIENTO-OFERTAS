@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FollowUp } from '../types.js';
-import Modal from './Modal.js';
+import { FollowUp } from '../types.ts';
+import Modal from './Modal.tsx';
 
 interface EditFollowUpModalProps {
   isOpen: boolean;

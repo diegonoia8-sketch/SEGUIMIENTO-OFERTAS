@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Offer } from '../types.js';
+import { Offer } from '../types.ts';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface OfferChartProps {
