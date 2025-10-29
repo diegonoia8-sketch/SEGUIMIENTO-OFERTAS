@@ -1,21 +1,19 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { User, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
-import { Offer, FollowUp, Status } from './types.ts';
-import Header from './components/Header.tsx';
-import OfferTable from './components/OfferTable.tsx';
-import RegisterOfferModal from './components/RegisterOfferModal.tsx';
-import UpdateOfferModal from './components/UpdateOfferModal.tsx';
-import HistoryView from './components/HistoryView.tsx';
-import OfferChart from './components/OfferChart.tsx';
-import CogIcon from './components/icons/CogIcon.tsx';
-import EditFollowUpModal from './components/EditFollowUpModal.tsx';
-import ConfigurationView from './components/ConfigurationView.tsx';
-import AlertDialog from './components/AlertDialog.tsx';
-import { auth, db } from './firebase.ts';
+import { Offer, FollowUp, Status } from './types.js';
+import Header from './components/Header.js';
+import OfferTable from './components/OfferTable.js';
+import RegisterOfferModal from './components/RegisterOfferModal.js';
+import UpdateOfferModal from './components/UpdateOfferModal.js';
+import HistoryView from './components/HistoryView.js';
+import OfferChart from './components/OfferChart.js';
+import CogIcon from './components/icons/CogIcon.js';
+import EditFollowUpModal from './components/EditFollowUpModal.js';
+import ConfigurationView from './components/ConfigurationView.js';
+import AlertDialog from './components/AlertDialog.js';
+import { db } from './firebase.js';
 import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, query, orderBy, getDoc, setDoc, where, getDocs, writeBatch } from 'firebase/firestore';
-import EditOfferModal from './components/EditOfferModal.tsx';
-import ImportCSVModal from './components/ImportCSVModal.tsx';
-import Login from './components/Login.tsx';
+import EditOfferModal from './components/EditOfferModal.js';
+import ImportCSVModal from './components/ImportCSVModal.js';
 
 interface DialogState {
     isOpen: boolean;
@@ -26,8 +24,6 @@ interface DialogState {
 }
 
 const App: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [statuses, setStatuses] = useState<Status[]>([]);
@@ -51,23 +47,6 @@ const App: React.FC = () => {
   const existingOfferIds = useMemo(() => new Set(offers.map(o => o.id)), [offers]);
   
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-        setUser(currentUser);
-        setAuthLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
-
-  useEffect(() => {
-    if (!user) {
-        setOffers([]);
-        setFollowUps([]);
-        setStatuses([]);
-        setIsDataLoading(false);
-        return;
-    }
-
     setIsDataLoading(true);
     
     const offersQuery = query(collection(db, 'offers'), orderBy('proyecto'));
@@ -97,33 +76,8 @@ const App: React.FC = () => {
         unsubFollowUps();
         unsubStatuses();
     };
-  }, [user]);
+  }, []);
   
-  const handleLogin = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-        await signInWithPopup(auth, provider);
-    } catch (error) {
-        console.error("Authentication error: ", error);
-        setDialog({
-            isOpen: true,
-            title: "Error de Autenticación",
-            message: "No se pudo iniciar sesión con Google. Por favor, inténtelo de nuevo.",
-            isConfirmation: false,
-            onConfirm: null,
-        });
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-        await signOut(auth);
-    } catch (error) {
-        console.error("Logout error: ", error);
-    }
-  };
-
-
   const handleRegisterOffer = async (newOfferData: Omit<Offer, 'ultAct'>) => {
     const offerRef = doc(db, 'offers', newOfferData.id);
     const docSnap = await getDoc(offerRef);
@@ -285,18 +239,6 @@ const App: React.FC = () => {
       }
   };
   
-  if (authLoading) {
-    return (
-        <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900">
-            <p className="text-xl text-gray-800 dark:text-white">Autenticando...</p>
-        </div>
-    );
-  }
-
-  if (!user) {
-    return <Login onLogin={handleLogin} />;
-  }
-  
   if (isDataLoading) {
       return (
           <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900">
@@ -308,11 +250,9 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
       <Header 
-        user={user}
         onRegisterClick={() => setIsRegisterModalOpen(true)}
         onUpdateClick={() => setIsUpdateModalOpen(true)}
         onImportClick={() => setIsImportModalOpen(true)}
-        onLogout={handleLogout}
       />
       <main className="container mx-auto p-4 space-y-8">
         <div className="mb-8 border-b border-gray-200 dark:border-gray-700">

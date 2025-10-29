@@ -1,4 +1,3 @@
-
 export interface Offer {
   id: string; // Document ID from Firestore
   proyecto: string;

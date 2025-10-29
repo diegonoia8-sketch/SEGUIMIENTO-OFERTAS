@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Offer, FollowUp } from '../types.ts';
-import EditIcon from './icons/EditIcon.tsx';
-import TrashIcon from './icons/TrashIcon.tsx';
-import OfferSearchInput from './OfferSearchInput.tsx';
+import { Offer, FollowUp } from '../types.js';
+import EditIcon from './icons/EditIcon.js';
+import TrashIcon from './icons/TrashIcon.js';
+import OfferSearchInput from './OfferSearchInput.js';
 
 interface HistoryViewProps {
   offers: Offer[];
