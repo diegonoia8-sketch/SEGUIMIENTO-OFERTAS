@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Offer, FollowUp, Status } from './types';
 import Header from './components/Header';
 import OfferTable from './components/OfferTable';
@@ -11,7 +11,9 @@ import EditFollowUpModal from './components/EditFollowUpModal';
 import ConfigurationView from './components/ConfigurationView';
 import AlertDialog from './components/AlertDialog';
 import { db } from './firebase';
-import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, query, orderBy, getDoc, setDoc } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, query, orderBy, getDoc, setDoc, where, getDocs, writeBatch } from 'firebase/firestore';
+import EditOfferModal from './components/EditOfferModal';
+import ImportCSVModal from './components/ImportCSVModal';
 
 interface DialogState {
     isOpen: boolean;
@@ -33,10 +35,16 @@ const App: React.FC = () => {
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [isEditFollowUpModalOpen, setIsEditFollowUpModalOpen] = useState(false);
   const [editingFollowUp, setEditingFollowUp] = useState<FollowUp | null>(null);
+  const [isEditOfferModalOpen, setIsEditOfferModalOpen] = useState(false);
+  const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
 
   const [dialog, setDialog] = useState<DialogState>({ 
       isOpen: false, title: '', message: '', isConfirmation: false, onConfirm: null 
   });
+  
+  const existingOfferIds = useMemo(() => new Set(offers.map(o => o.id)), [offers]);
 
   useEffect(() => {
     setIsDataLoading(true);
@@ -92,6 +100,46 @@ const App: React.FC = () => {
     };
     await setDoc(offerRef, offerWithDate);
   };
+  
+    const handleOpenEditOfferModal = (offer: Offer) => {
+        setEditingOffer(offer);
+        setIsEditOfferModalOpen(true);
+    };
+
+    const handleEditOffer = async (updatedOfferData: Omit<Offer, 'ultAct'>) => {
+        const offerRef = doc(db, 'offers', updatedOfferData.id);
+        const offerWithDate = {
+            ...updatedOfferData,
+            ultAct: new Date().toISOString().split('T')[0],
+        };
+        await updateDoc(offerRef, offerWithDate as any);
+    };
+
+    const handleDeleteOffer = (offer: Offer) => {
+        setDialog({
+            isOpen: true,
+            title: 'Confirmar Eliminación de Oferta',
+            message: `¿Estás seguro de que quieres eliminar la oferta "${offer.id} - ${offer.proyecto}"? Esta acción no se puede deshacer y también eliminará todo su historial de seguimiento.`,
+            isConfirmation: true,
+            onConfirm: async () => {
+                const followUpsQuery = query(collection(db, 'followUps'), where('offerId', '==', offer.id));
+                const followUpsSnapshot = await getDocs(followUpsQuery);
+
+                const batch = writeBatch(db);
+                
+                const offerRef = doc(db, 'offers', offer.id);
+                batch.delete(offerRef);
+
+                followUpsSnapshot.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+
+                await batch.commit();
+                
+                setDialog({ isOpen: false, title: '', message: '', isConfirmation: false, onConfirm: null });
+            }
+        });
+    };
 
   const handleUpdateOffer = async (newFollowUpData: Omit<FollowUp, 'id'>) => {
     await addDoc(collection(db, 'followUps'), newFollowUpData);
@@ -159,6 +207,39 @@ const App: React.FC = () => {
     });
   }
   
+  const handleImportOffers = async (offersToImport: Omit<Offer, 'ultAct'>[]) => {
+      const batch = writeBatch(db);
+      
+      offersToImport.forEach(newOfferData => {
+          const offerRef = doc(db, 'offers', newOfferData.id);
+          const offerWithDate = {
+              ...newOfferData,
+              ultAct: newOfferData.fechaRfq,
+          };
+          batch.set(offerRef, offerWithDate);
+      });
+
+      try {
+        await batch.commit();
+        setDialog({
+            isOpen: true,
+            title: 'Importación Completada',
+            message: `${offersToImport.length} nueva(s) oferta(s) importada(s) con éxito.`,
+            isConfirmation: false,
+            onConfirm: null,
+        });
+      } catch (error) {
+        console.error('Error al importar ofertas desde CSV:', error);
+        setDialog({
+            isOpen: true,
+            title: 'Error de Importación',
+            message: 'Ocurrió un error al guardar los datos en la base de datos. Por favor, asegúrese de que todos los datos en el archivo CSV son correctos (especialmente los formatos de fecha y números) y vuelva a intentarlo.',
+            isConfirmation: false,
+            onConfirm: null,
+        });
+      }
+  };
+  
   if (isDataLoading) {
       return (
           <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900">
@@ -172,6 +253,7 @@ const App: React.FC = () => {
       <Header 
         onRegisterClick={() => setIsRegisterModalOpen(true)}
         onUpdateClick={() => setIsUpdateModalOpen(true)}
+        onImportClick={() => setIsImportModalOpen(true)}
       />
       <main className="container mx-auto p-4 space-y-8">
         <div className="mb-8 border-b border-gray-200 dark:border-gray-700">
@@ -192,7 +274,14 @@ const App: React.FC = () => {
         
         {activeTab === 'offers' && (
             <div className="space-y-8">
-                <OfferTable offers={offers} followUps={followUps} statuses={statuses} onUpdateOfferStatus={handleUpdateOfferStatus} />
+                <OfferTable 
+                    offers={offers} 
+                    followUps={followUps} 
+                    statuses={statuses} 
+                    onUpdateOfferStatus={handleUpdateOfferStatus}
+                    onEditOffer={handleOpenEditOfferModal}
+                    onDeleteOffer={handleDeleteOffer} 
+                />
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   <HistoryView offers={offers} followUps={followUps} onEditFollowUp={handleOpenEditFollowUpModal} onDeleteFollowUp={handleDeleteFollowUp} />
                   <OfferChart offers={offers} />
@@ -217,6 +306,19 @@ const App: React.FC = () => {
         onClose={() => setIsUpdateModalOpen(false)}
         onSubmit={handleUpdateOffer}
         offers={offers}
+      />
+       <ImportCSVModal 
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onSubmit={handleImportOffers}
+        existingOfferIds={existingOfferIds}
+       />
+      <EditOfferModal
+        isOpen={isEditOfferModalOpen}
+        onClose={() => setIsEditOfferModalOpen(false)}
+        onSubmit={handleEditOffer}
+        statuses={statuses}
+        offer={editingOffer}
       />
       <EditFollowUpModal
         isOpen={isEditFollowUpModalOpen}

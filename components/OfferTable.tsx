@@ -1,12 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { Offer, FollowUp, Status } from '../types';
 import FilterClearIcon from './icons/FilterClearIcon';
+import EditIcon from './icons/EditIcon';
+import TrashIcon from './icons/TrashIcon';
 
 interface OfferTableProps {
   offers: Offer[];
   followUps: FollowUp[];
   statuses: Status[];
   onUpdateOfferStatus: (offerId: string, newStatus: string) => void;
+  onEditOffer: (offer: Offer) => void;
+  onDeleteOffer: (offer: Offer) => void;
 }
 
 const formatDate = (dateString: string) => {
@@ -27,7 +31,7 @@ const getTextColorForBackground = (hexColor: string) => {
     return luminance > 0.5 ? '#000000' : '#FFFFFF';
 };
 
-const OfferTable: React.FC<OfferTableProps> = ({ offers, followUps, statuses, onUpdateOfferStatus }) => {
+const OfferTable: React.FC<OfferTableProps> = ({ offers, followUps, statuses, onUpdateOfferStatus, onEditOffer, onDeleteOffer }) => {
   const [filters, setFilters] = useState<Partial<Record<keyof Offer, string>>>({});
 
   const handleFilterChange = (key: keyof Offer, value: string) => {
@@ -121,6 +125,7 @@ const OfferTable: React.FC<OfferTableProps> = ({ offers, followUps, statuses, on
               <th scope="col" className="px-6 py-3">SOP</th>
               <th scope="col" className="px-6 py-3">Duración</th>
               <th scope="col" className="px-6 py-3">Comentarios</th>
+              <th scope="col" className="px-6 py-3">Acciones</th>
             </tr>
             <tr className="bg-gray-50 dark:bg-gray-700">
                 <th className="px-2 py-1"><FilterInput column="id"/></th>
@@ -144,6 +149,7 @@ const OfferTable: React.FC<OfferTableProps> = ({ offers, followUps, statuses, on
                 <th className="px-2 py-1"><FilterInput column="volTot"/></th>
                 <th className="px-2 py-1"><FilterInput column="sop"/></th>
                 <th className="px-2 py-1"><FilterInput column="duracion"/></th>
+                <th className="px-2 py-1"></th>
                 <th className="px-2 py-1"></th>
             </tr>
           </thead>
@@ -180,12 +186,22 @@ const OfferTable: React.FC<OfferTableProps> = ({ offers, followUps, statuses, on
                         <td className="px-6 py-4 max-w-xs truncate" title={getLatestFollowUp(offer.id)}>
                             {getLatestFollowUp(offer.id)}
                         </td>
+                        <td className="px-6 py-4">
+                            <div className="flex items-center space-x-3">
+                                <button onClick={() => onEditOffer(offer)} className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300" aria-label={`Editar oferta ${offer.id}`}>
+                                    <EditIcon className="w-5 h-5" />
+                                </button>
+                                <button onClick={() => onDeleteOffer(offer)} className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" aria-label={`Eliminar oferta ${offer.id}`}>
+                                    <TrashIcon className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </td>
                       </tr>
                     )
                 })
             ) : (
                 <tr>
-                    <td colSpan={13} className="text-center py-10">
+                    <td colSpan={14} className="text-center py-10">
                         <p className="text-gray-500 dark:text-gray-400">No se encontraron ofertas que coincidan con los filtros.</p>
                     </td>
                 </tr>

@@ -1,77 +1,89 @@
 
 import React, { useMemo } from 'react';
 import { Offer } from '../types';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface OfferChartProps {
   offers: Offer[];
 }
 
-const OfferChart: React.FC<OfferChartProps> = ({ offers }) => {
+const COLORS = ['#3b82f6', '#10b981', '#ef4444', '#f97316', '#8b5cf6', '#ec4899'];
 
-  const chartData = useMemo(() => {
-    const data: { [key: string]: number } = {};
-    const fiveYearsAgo = new Date();
-    fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
+const OfferChart: React.FC<OfferChartProps> = ({ offers }) => {
+  const { chartData, uniqueYears } = useMemo(() => {
+    const dataByYearMonth: { [year: string]: { [month: number]: number } } = {};
+    const years = new Set<string>();
 
     offers.forEach(offer => {
-      const offerDate = new Date(offer.fechaRfq);
-      if (offerDate >= fiveYearsAgo) {
-        const monthYear = offerDate.toLocaleString('es-ES', { month: 'short', year: 'numeric' });
-        if (data[monthYear]) {
-          data[monthYear]++;
-        } else {
-          data[monthYear] = 1;
+      if (offer.fechaRfq) {
+        const offerDate = new Date(offer.fechaRfq);
+        const year = offerDate.getFullYear().toString();
+        const month = offerDate.getMonth(); // 0-11
+        
+        years.add(year);
+        
+        if (!dataByYearMonth[year]) {
+          dataByYearMonth[year] = {};
         }
+        if (!dataByYearMonth[year][month]) {
+          dataByYearMonth[year][month] = 0;
+        }
+        dataByYearMonth[year][month]++;
       }
     });
-    
-    // Create a timeline of all months in the last 5 years
-    const allMonthsData = [];
-    let currentDate = new Date(fiveYearsAgo);
-    const today = new Date();
-    
-    while(currentDate <= today) {
-        const monthYear = currentDate.toLocaleString('es-ES', { month: 'short', year: 'numeric' });
-        allMonthsData.push({
-            name: monthYear,
-            ofertas: data[monthYear] || 0
-        });
-        currentDate.setMonth(currentDate.getMonth() + 1);
-    }
-    
-    return allMonthsData;
 
+    const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const sortedYears = Array.from(years).sort((a, b) => parseInt(a) - parseInt(b));
+
+    const finalChartData = monthNames.map((monthName, index) => {
+      const monthData: { name: string; [key: string]: string | number } = { name: monthName };
+      sortedYears.forEach(year => {
+        monthData[year] = dataByYearMonth[year]?.[index] || 0;
+      });
+      return monthData;
+    });
+
+    return { chartData: finalChartData, uniqueYears: sortedYears };
   }, [offers]);
 
   return (
     <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
-        <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">Ofertas por Mes (Últimos 5 Años)</h2>
-        <div style={{ width: '100%', height: 400 }}>
-            <ResponsiveContainer>
-                <BarChart
-                data={chartData}
-                margin={{
-                    top: 5,
-                    right: 30,
-                    left: 20,
-                    bottom: 5,
-                }}
-                >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} interval={'preserveStartEnd'} />
-                <YAxis allowDecimals={false} />
-                <Tooltip
-                    contentStyle={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                        border: '1px solid #ccc',
-                    }}
-                 />
-                <Legend />
-                <Bar dataKey="ofertas" fill="#3b82f6" name="Nº de Ofertas" />
-                </BarChart>
-            </ResponsiveContainer>
-        </div>
+      <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">Evolución Anual de Ofertas por Mes</h2>
+      <div style={{ width: '100%', height: 400 }}>
+        <ResponsiveContainer>
+          <LineChart
+            data={chartData}
+            margin={{
+              top: 5,
+              right: 30,
+              left: 20,
+              bottom: 5,
+            }}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis allowDecimals={false} />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                border: '1px solid #ccc',
+                color: '#333'
+              }}
+            />
+            <Legend />
+            {uniqueYears.map((year, index) => (
+               <Line 
+                  key={year} 
+                  type="monotone" 
+                  dataKey={year} 
+                  stroke={COLORS[index % COLORS.length]} 
+                  strokeWidth={2}
+                  activeDot={{ r: 8 }}
+                />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 };

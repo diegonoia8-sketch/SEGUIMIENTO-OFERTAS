@@ -1,5 +1,4 @@
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Offer, FollowUp } from '../types';
 import EditIcon from './icons/EditIcon';
 import TrashIcon from './icons/TrashIcon';
@@ -23,6 +22,14 @@ const formatDate = (dateString: string) => {
 
 const HistoryView: React.FC<HistoryViewProps> = ({ offers, followUps, onEditFollowUp, onDeleteFollowUp }) => {
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
+
+  useEffect(() => {
+    // If the selected offer is no longer in the main offers list (e.g., it was deleted),
+    // reset the selection to avoid displaying stale data.
+    if (selectedOffer && !offers.some(o => o.id === selectedOffer.id)) {
+      setSelectedOffer(null);
+    }
+  }, [offers, selectedOffer]);
 
   const filteredHistory = useMemo(() => {
     if (!selectedOffer) return [];

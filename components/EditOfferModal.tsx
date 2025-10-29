@@ -2,14 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Offer, Status } from '../types';
 import Modal from './Modal';
 
-interface RegisterOfferModalProps {
+interface EditOfferModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (offer: Omit<Offer, 'ultAct'>) => void;
   statuses: Status[];
+  offer: Offer | null;
 }
 
-const RegisterOfferModal: React.FC<RegisterOfferModalProps> = ({ isOpen, onClose, onSubmit, statuses }) => {
+const EditOfferModal: React.FC<EditOfferModalProps> = ({ isOpen, onClose, onSubmit, statuses, offer }) => {
   const getInitialState = () => ({
     id: '',
     estado: '',
@@ -27,10 +28,24 @@ const RegisterOfferModal: React.FC<RegisterOfferModalProps> = ({ isOpen, onClose
   const [formData, setFormData] = useState(getInitialState());
 
   useEffect(() => {
-    if (isOpen) {
-      setFormData(getInitialState());
+    if (offer) {
+      setFormData({
+        id: offer.id,
+        estado: offer.estado || '',
+        cliente: offer.cliente || '',
+        destino: offer.destino || '',
+        proyecto: offer.proyecto,
+        fechaRfq: offer.fechaRfq,
+        responsable: offer.responsable,
+        sop: offer.sop || '',
+        duracion: offer.duracion || '',
+        volPico: offer.volPico?.toString() || '',
+        volTot: offer.volTot?.toString() || '',
+      });
+    } else if (!isOpen) {
+        setFormData(getInitialState());
     }
-  }, [isOpen, statuses]);
+  }, [offer, isOpen, statuses]);
 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -61,7 +76,7 @@ const RegisterOfferModal: React.FC<RegisterOfferModalProps> = ({ isOpen, onClose
     onClose();
   };
   
-  const InputField = ({ label, name, type = 'text', required = false, value, onChange }: { label: string, name: string, type?: string, required?: boolean, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
+  const InputField = ({ label, name, type = 'text', required = false, value, onChange, disabled = false }: { label: string, name: string, type?: string, required?: boolean, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, disabled?: boolean }) => (
     <div>
       <label htmlFor={name} className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
         {label} {required && <span className="text-red-500">*</span>}
@@ -73,17 +88,18 @@ const RegisterOfferModal: React.FC<RegisterOfferModalProps> = ({ isOpen, onClose
         value={value}
         onChange={onChange}
         required={required}
-        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+        disabled={disabled}
+        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white disabled:bg-gray-200 dark:disabled:bg-gray-500 dark:disabled:text-gray-400"
       />
     </div>
   );
 
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Registrar Nueva Oferta">
+    <Modal isOpen={isOpen} onClose={onClose} title="Editar Oferta">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <InputField label="Nº Oferta" name="id" required value={formData.id} onChange={handleChange} />
+            <InputField label="Nº Oferta" name="id" required value={formData.id} onChange={handleChange} disabled={true} />
             <InputField label="Cliente" name="cliente" value={formData.cliente} onChange={handleChange} />
             <InputField label="Destino" name="destino" value={formData.destino} onChange={handleChange} />
             <InputField label="Proyecto" name="proyecto" required value={formData.proyecto} onChange={handleChange} />
@@ -108,7 +124,7 @@ const RegisterOfferModal: React.FC<RegisterOfferModalProps> = ({ isOpen, onClose
                 Cancelar
             </button>
             <button type="submit" className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-                Registrar
+                Guardar Cambios
             </button>
         </div>
       </form>
@@ -116,4 +132,4 @@ const RegisterOfferModal: React.FC<RegisterOfferModalProps> = ({ isOpen, onClose
   );
 };
 
-export default RegisterOfferModal;
+export default EditOfferModal;
