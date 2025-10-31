@@ -2,21 +2,23 @@ import React from 'react';
 import PlusIcon from './icons/PlusIcon.tsx';
 import EditIcon from './icons/EditIcon.tsx';
 import UploadIcon from './icons/UploadIcon.tsx';
+import DownloadIcon from './icons/DownloadIcon.tsx';
 
 interface HeaderProps {
   onRegisterClick: () => void;
   onUpdateClick: () => void;
   onImportClick: () => void;
+  onExportClick: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onRegisterClick, onUpdateClick, onImportClick }) => {
+const Header: React.FC<HeaderProps> = ({ onRegisterClick, onUpdateClick, onImportClick, onExportClick }) => {
   return (
     <header className="bg-white dark:bg-gray-800 shadow-md p-4 mb-8">
       <div className="container mx-auto flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
           Gestor de Ofertas
         </h1>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           <button
             onClick={onRegisterClick}
             className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
@@ -40,6 +42,14 @@ const Header: React.FC<HeaderProps> = ({ onRegisterClick, onUpdateClick, onImpor
           >
             <UploadIcon className="w-5 h-5 mr-0 sm:mr-2" />
             <span className="hidden sm:inline">Importar CSV</span>
+          </button>
+          <button
+            onClick={onExportClick}
+            className="flex items-center bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-colors duration-200"
+            aria-label="Exportar ofertas a archivo CSV"
+          >
+            <DownloadIcon className="w-5 h-5 mr-0 sm:mr-2" />
+            <span className="hidden sm:inline">Exportar CSV</span>
           </button>
         </div>
       </div>

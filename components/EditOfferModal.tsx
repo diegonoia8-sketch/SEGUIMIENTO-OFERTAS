@@ -10,6 +10,24 @@ interface EditOfferModalProps {
   offer: Offer | null;
 }
 
+const InputField = ({ label, name, type = 'text', required = false, value, onChange, disabled = false }: { label: string, name: string, type?: string, required?: boolean, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, disabled?: boolean }) => (
+    <div>
+      <label htmlFor={name} className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      <input
+        type={type}
+        id={name}
+        name={name}
+        value={value}
+        onChange={onChange}
+        required={required}
+        disabled={disabled}
+        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white disabled:bg-gray-200 dark:disabled:bg-gray-500 dark:disabled:text-gray-400"
+      />
+    </div>
+);
+
 const EditOfferModal: React.FC<EditOfferModalProps> = ({ isOpen, onClose, onSubmit, statuses, offer }) => {
   const getInitialState = () => ({
     id: '',
@@ -45,7 +63,7 @@ const EditOfferModal: React.FC<EditOfferModalProps> = ({ isOpen, onClose, onSubm
     } else if (!isOpen) {
         setFormData(getInitialState());
     }
-  }, [offer, isOpen, statuses]);
+  }, [offer, isOpen]);
 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -75,25 +93,6 @@ const EditOfferModal: React.FC<EditOfferModalProps> = ({ isOpen, onClose, onSubm
     });
     onClose();
   };
-  
-  const InputField = ({ label, name, type = 'text', required = false, value, onChange, disabled = false }: { label: string, name: string, type?: string, required?: boolean, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, disabled?: boolean }) => (
-    <div>
-      <label htmlFor={name} className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      <input
-        type={type}
-        id={name}
-        name={name}
-        value={value}
-        onChange={onChange}
-        required={required}
-        disabled={disabled}
-        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white disabled:bg-gray-200 dark:disabled:bg-gray-500 dark:disabled:text-gray-400"
-      />
-    </div>
-  );
-
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Editar Oferta">

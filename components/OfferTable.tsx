@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Offer, FollowUp, Status } from '../types.ts';
 import FilterClearIcon from './icons/FilterClearIcon.tsx';
 import EditIcon from './icons/EditIcon.tsx';
@@ -8,6 +8,9 @@ interface OfferTableProps {
   offers: Offer[];
   followUps: FollowUp[];
   statuses: Status[];
+  filters: Partial<Record<keyof Offer, string>>;
+  onFilterChange: (key: keyof Offer, value: string) => void;
+  onClearFilters: () => void;
   onUpdateOfferStatus: (offerId: string, newStatus: string) => void;
   onEditOffer: (offer: Offer) => void;
   onDeleteOffer: (offer: Offer) => void;
@@ -31,17 +34,18 @@ const getTextColorForBackground = (hexColor: string) => {
     return luminance > 0.5 ? '#000000' : '#FFFFFF';
 };
 
-const OfferTable: React.FC<OfferTableProps> = ({ offers, followUps, statuses, onUpdateOfferStatus, onEditOffer, onDeleteOffer }) => {
-  const [filters, setFilters] = useState<Partial<Record<keyof Offer, string>>>({});
-
-  const handleFilterChange = (key: keyof Offer, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-  };
+const OfferTable: React.FC<OfferTableProps> = ({ 
+    offers, 
+    followUps, 
+    statuses, 
+    filters,
+    onFilterChange,
+    onClearFilters,
+    onUpdateOfferStatus, 
+    onEditOffer, 
+    onDeleteOffer 
+}) => {
   
-  const clearFilters = () => {
-    setFilters({});
-  }
-
   const getLatestFollowUp = (offerId: string) => {
     const offerFollowUps = followUps
       .filter((f) => f.offerId === offerId)
@@ -56,6 +60,8 @@ const OfferTable: React.FC<OfferTableProps> = ({ offers, followUps, statuses, on
         cliente: new Set(),
         responsable: new Set(),
     };
+    // Note: This calculates unique values from all offers, not just filtered ones,
+    // to ensure filter dropdowns are always complete.
     offers.forEach(offer => {
         if(offer.cliente) unique.cliente.add(offer.cliente);
         if(offer.responsable) unique.responsable.add(offer.responsable);
@@ -67,23 +73,11 @@ const OfferTable: React.FC<OfferTableProps> = ({ offers, followUps, statuses, on
   }, [offers]);
 
 
-  const filteredOffers = useMemo(() => {
-    return offers.filter(offer => {
-      return Object.entries(filters).every(([key, value]) => {
-        if (!value) return true;
-        const offerValue = offer[key as keyof Offer];
-        if (offerValue === null || offerValue === undefined) return false;
-        
-        return String(offerValue).toLowerCase().includes(String(value).toLowerCase());
-      });
-    });
-  }, [offers, filters]);
-
   const FilterInput = ({ column }: { column: keyof Offer }) => (
     <input
       type="text"
       value={filters[column] || ''}
-      onChange={(e) => handleFilterChange(column, e.target.value)}
+      onChange={(e) => onFilterChange(column, e.target.value)}
       className="w-full text-xs p-1 border border-gray-300 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
     />
   );
@@ -91,7 +85,7 @@ const OfferTable: React.FC<OfferTableProps> = ({ offers, followUps, statuses, on
   const FilterSelect = ({ column, options }: { column: keyof Offer, options: string[] }) => (
     <select
         value={filters[column] || ''}
-        onChange={(e) => handleFilterChange(column, e.target.value)}
+        onChange={(e) => onFilterChange(column, e.target.value)}
         className="w-full text-xs p-1 border border-gray-300 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
     >
         <option value="">Todos</option>
@@ -103,7 +97,7 @@ const OfferTable: React.FC<OfferTableProps> = ({ offers, followUps, statuses, on
     <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-gray-800 dark:text-white">Listado de Ofertas</h2>
-         <button onClick={clearFilters} className="flex items-center text-sm text-blue-600 dark:text-blue-400 hover:underline">
+         <button onClick={onClearFilters} className="flex items-center text-sm text-blue-600 dark:text-blue-400 hover:underline">
             <FilterClearIcon className="w-4 h-4 mr-1" />
             Limpiar Filtros
         </button>
@@ -132,7 +126,7 @@ const OfferTable: React.FC<OfferTableProps> = ({ offers, followUps, statuses, on
                 <th className="px-2 py-1">
                     <select
                         value={filters.estado || ''}
-                        onChange={(e) => handleFilterChange('estado', e.target.value)}
+                        onChange={(e) => onFilterChange('estado', e.target.value)}
                         className="w-full text-xs p-1 border border-gray-300 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     >
                         <option value="">Todos</option>
@@ -154,8 +148,8 @@ const OfferTable: React.FC<OfferTableProps> = ({ offers, followUps, statuses, on
             </tr>
           </thead>
           <tbody>
-            {filteredOffers.length > 0 ? (
-                filteredOffers.map((offer) => {
+            {offers.length > 0 ? (
+                offers.map((offer) => {
                     const statusColor = statusColorMap.get(offer.estado) || '#FFFFFF';
                     const textColor = getTextColorForBackground(statusColor);
                     return (

@@ -38,6 +38,7 @@ const App: React.FC = () => {
   const [isEditOfferModalOpen, setIsEditOfferModalOpen] = useState(false);
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [filters, setFilters] = useState<Partial<Record<keyof Offer, string>>>({});
 
 
   const [dialog, setDialog] = useState<DialogState>({ 
@@ -238,6 +239,96 @@ const App: React.FC = () => {
         });
       }
   };
+
+  const handleFilterChange = (key: keyof Offer, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const clearFilters = () => {
+    setFilters({});
+  };
+
+  const filteredOffers = useMemo(() => {
+    return offers.filter(offer => {
+      return Object.entries(filters).every(([key, value]) => {
+        if (!value) return true;
+        const offerValue = offer[key as keyof Offer];
+        if (offerValue === null || offerValue === undefined) return false;
+        
+        return String(offerValue).toLowerCase().includes(String(value).toLowerCase());
+      });
+    });
+  }, [offers, filters]);
+
+  const getLatestFollowUp = (offerId: string) => {
+    const offerFollowUps = followUps
+      .filter((f) => f.offerId === offerId)
+      .sort((a, b) => new Date(b.fechaAct).getTime() - new Date(a.fechaAct).getTime());
+    return offerFollowUps[0]?.comentario || '';
+  };
+
+  const handleExportCSV = () => {
+    if (filteredOffers.length === 0) {
+        setDialog({
+            isOpen: true,
+            title: 'No hay Datos para Exportar',
+            message: "No hay ofertas que coincidan con los filtros actuales para exportar.",
+            isConfirmation: false,
+            onConfirm: null,
+        });
+        return;
+    }
+
+    const headers = [
+        "Nº Oferta", "Estado", "Cliente", "Destino", "Proyecto",
+        "Fecha RFQ", "Responsable", "Ult Act", "Vol Pico", "Vol Tot",
+        "SOP", "Duración", "Último Comentario"
+    ];
+    
+    const formatDateForCSV = (dateString: string) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    };
+
+    const escapeCsvField = (field: any) => {
+        const str = String(field ?? '');
+        if (str.includes(';') || str.includes('"') || str.includes('\n')) {
+            return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+    };
+
+    const csvRows = filteredOffers.map(offer => {
+        const latestFollowUp = getLatestFollowUp(offer.id);
+        const row = [
+            offer.id, offer.estado, offer.cliente, offer.destino, offer.proyecto,
+            formatDateForCSV(offer.fechaRfq), offer.responsable, formatDateForCSV(offer.ultAct),
+            offer.volPico?.toString().replace('.', ',') || '',
+            offer.volTot?.toString().replace('.', ',') || '',
+            offer.sop, offer.duracion, latestFollowUp
+        ];
+        return row.map(escapeCsvField).join(';');
+    });
+
+    const csvContent = [headers.join(';'), ...csvRows].join('\n');
+    
+    const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        const today = new Date().toISOString().split('T')[0];
+        link.setAttribute("href", url);
+        link.setAttribute("download", `export_ofertas_${today}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+  };
   
   if (isDataLoading) {
       return (
@@ -253,6 +344,7 @@ const App: React.FC = () => {
         onRegisterClick={() => setIsRegisterModalOpen(true)}
         onUpdateClick={() => setIsUpdateModalOpen(true)}
         onImportClick={() => setIsImportModalOpen(true)}
+        onExportClick={handleExportCSV}
       />
       <main className="container mx-auto p-4 space-y-8">
         <div className="mb-8 border-b border-gray-200 dark:border-gray-700">
@@ -274,9 +366,12 @@ const App: React.FC = () => {
         {activeTab === 'offers' && (
             <div className="space-y-8">
                 <OfferTable 
-                    offers={offers} 
+                    offers={filteredOffers} 
                     followUps={followUps} 
                     statuses={statuses} 
+                    filters={filters}
+                    onFilterChange={handleFilterChange}
+                    onClearFilters={clearFilters}
                     onUpdateOfferStatus={handleUpdateOfferStatus}
                     onEditOffer={handleOpenEditOfferModal}
                     onDeleteOffer={handleDeleteOffer} 
