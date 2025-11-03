@@ -719,9 +719,9 @@ const OfferTable = ({
             Limpiar Filtros
         </button>
       </div>
-       <div className="overflow-x-auto">
+       <div className="overflow-auto max-h-[36rem]">
         <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-            <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+            <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 sticky top-0 z-10">
             <tr>
               <th scope="col" className="px-6 py-3">Nº Oferta</th>
               <th scope="col" className="px-6 py-3">Estado</th>
@@ -1342,6 +1342,7 @@ const ImportCSVModal = ({ isOpen, onClose, onSubmit, existingOfferIds }) => {
       }
 
       const offers = [];
+      const newOfferIdsInFile = new Set();
       for (let i = 1; i < lines.length; i++) {
         const values = lines[i].split(delimiter);
         const rowData = {};
@@ -1407,8 +1408,11 @@ const ImportCSVModal = ({ isOpen, onClose, onSubmit, existingOfferIds }) => {
 
         if (existingOfferIds.has(offer.id)) {
             offers.push({ ...offer, status: 'duplicate' });
+        } else if (newOfferIdsInFile.has(offer.id)) {
+            offers.push({ ...offer, status: 'error', error: 'Nº Oferta duplicado dentro del archivo CSV.' });
         } else {
             offers.push({ ...offer, status: 'new' });
+            newOfferIdsInFile.add(offer.id);
         }
       }
       setParsedOffers(offers);
@@ -1598,7 +1602,8 @@ const App = () => {
             ...newOfferData,
             ultAct: newOfferData.fechaRfq,
         };
-        await setDoc(offerRef, offerWithDate);
+        const cleanOffer = Object.fromEntries(Object.entries(offerWithDate).filter(([_, v]) => v !== undefined));
+        await setDoc(offerRef, cleanOffer);
     };
 
     const handleOpenEditOfferModal = (offer) => {
@@ -1612,7 +1617,8 @@ const App = () => {
             ...updatedOfferData,
             ultAct: new Date().toISOString().split('T')[0],
         };
-        await updateDoc(offerRef, offerWithDate);
+        const cleanOffer = Object.fromEntries(Object.entries(offerWithDate).filter(([_, v]) => v !== undefined));
+        await updateDoc(offerRef, cleanOffer);
     };
 
     const handleDeleteOffer = (offer) => {
@@ -1707,7 +1713,8 @@ const App = () => {
         offersToImport.forEach(newOfferData => {
             const offerRef = doc(db, 'offers', newOfferData.id);
             const offerWithDate = { ...newOfferData, ultAct: newOfferData.fechaRfq };
-            batch.set(offerRef, offerWithDate);
+            const cleanOffer = Object.fromEntries(Object.entries(offerWithDate).filter(([_, v]) => v !== undefined));
+            batch.set(offerRef, cleanOffer);
         });
         try {
             await batch.commit();
@@ -1727,13 +1734,20 @@ const App = () => {
     };
 
     const filteredOffers = useMemo(() => {
-        return offers.filter(offer => {
+        const filtered = offers.filter(offer => {
             return Object.entries(filters).every(([key, value]) => {
                 if (!value) return true;
                 const offerValue = offer[key];
                 if (offerValue === null || offerValue === undefined) return false;
                 return String(offerValue).toLowerCase().includes(String(value).toLowerCase());
             });
+        });
+
+        // Sort by most recent 'ultAct' date
+        return filtered.sort((a, b) => {
+            const dateA = a.ultAct ? new Date(a.ultAct).getTime() : 0;
+            const dateB = b.ultAct ? new Date(b.ultAct).getTime() : 0;
+            return dateB - dateA;
         });
     }, [offers, filters]);
 
